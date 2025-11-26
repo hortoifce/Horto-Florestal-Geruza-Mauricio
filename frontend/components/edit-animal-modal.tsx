@@ -1,89 +1,119 @@
-"use client"
+// components/EditAnimalModal.tsx (VERSÃO ATUALIZADA)
+"use client";
 
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Zap, Upload, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Zap, Upload, Loader2 } from "lucide-react";
+import {
+  type Species,
+  type AnimalUpdateData,
+} from "@/contexts/species-context";
 
-interface Species {
-  id: number
-  name: string
-  scientificName: string
-  type: string
-  image: string
-  description: string
-  qrCode: string
-  family?: string
-  origin?: string
-  diet?: string
-}
+// NOVOS IMPORTS
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TiposAnimais } from "@/contexts/enum"; // Assumindo que este enum está em @/contexts/enum
 
 interface EditAnimalModalProps {
-  isOpen: boolean
-  onClose: () => void
-  species: Species | null
-  onSave: (updatedSpecies: Species) => void
+  isOpen: boolean;
+  onClose: () => void;
+  species: Species | null;
+  onSave: (id: string, data: AnimalUpdateData) => Promise<void>;
 }
 
-export function EditAnimalModal({ isOpen, onClose, species, onSave }: EditAnimalModalProps) {
+export function EditAnimalModal({
+  isOpen,
+  onClose,
+  species,
+  onSave,
+}: EditAnimalModalProps) {
   const [formData, setFormData] = useState({
-    name: "",
-    scientificName: "",
-    family: "",
-    origin: "",
-    diet: "",
-    description: "",
-    image: "",
-  })
-  const [isLoading, setIsLoading] = useState(false)
+    nomePopular: "",
+    nomeCientifico: "",
+    tipoAnimal: "",
+    alimentacao: "", // <-- MUDANÇA AQUI
+    habitos: "",
+  });
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (species) {
       setFormData({
-        name: species.name || "",
-        scientificName: species.scientificName || "",
-        family: species.family || "",
-        origin: species.origin || "",
-        diet: species.diet || "",
-        description: species.description || "",
-        image: species.image || "",
-      })
+        nomePopular: species.nomePopular || "",
+        nomeCientifico: species.nomeCientifico || "",
+        tipoAnimal: species.tipoAnimal || "",
+        alimentacao: species.alimentacao || "", // <-- MUDANÇA AQUI
+        habitos: species.habitos || "",
+      });
+      setImagePreview(species.image || null);
+      setImageFile(null);
     }
-  }, [species])
+  }, [species]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    } else {
+      setImageFile(null);
+      setImagePreview(species?.image || null);
+    }
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, tipoAnimal: value }));
+  };
 
   const handleSave = async () => {
-    if (!species) return
+    if (!species) return;
+    setIsLoading(true);
 
-    setIsLoading(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const updatedSpecies: Species = {
-      ...species,
+    const payload: AnimalUpdateData = {
       ...formData,
-    }
+      imagem: imageFile,
+    };
 
-    onSave(updatedSpecies)
-    setIsLoading(false)
-    onClose()
-  }
+    try {
+      await onSave(species.id, payload);
+      onClose();
+    } catch (err) {
+      console.error("Falha ao salvar animal:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleClose = () => {
     setFormData({
-      name: "",
-      scientificName: "",
-      family: "",
-      origin: "",
-      diet: "",
-      description: "",
-      image: "",
-    })
-    onClose()
-  }
+      nomePopular: "",
+      nomeCientifico: "",
+      tipoAnimal: "",
+      alimentacao: "", // <-- MUDANÇA AQUI
+      habitos: "",
+    });
+    setImageFile(null);
+    setImagePreview(null);
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -99,114 +129,128 @@ export function EditAnimalModal({ isOpen, onClose, species, onSave }: EditAnimal
           {/* Nome Popular e Científico */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome Popular *</Label>
+              <Label htmlFor="nomePopular">Nome Popular *</Label>
               <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                id="nomePopular"
+                value={formData.nomePopular}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, nomePopular: e.target.value }))
+                }
                 placeholder="Ex: Bem-te-vi"
-                className="transition-all duration-300 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="scientificName">Nome Científico *</Label>
+              <Label htmlFor="nomeCientifico">Nome Científico *</Label>
               <Input
-                id="scientificName"
-                value={formData.scientificName}
-                onChange={(e) => setFormData((prev) => ({ ...prev, scientificName: e.target.value }))}
+                id="nomeCientifico"
+                value={formData.nomeCientifico}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    nomeCientifico: e.target.value,
+                  }))
+                }
                 placeholder="Ex: Pitangus sulphuratus"
-                className="transition-all duration-300 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
           </div>
 
-          {/* Família e Origem */}
+          {/* Tipo Animal e Alimentação */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="family">Família</Label>
-              <Input
-                id="family"
-                value={formData.family}
-                onChange={(e) => setFormData((prev) => ({ ...prev, family: e.target.value }))}
-                placeholder="Ex: Tyrannidae"
-                className="transition-all duration-300 focus:ring-2 focus:ring-blue-500/20"
-              />
+              <Label htmlFor="tipoAnimal">Tipo de Animal</Label>
+              <Select
+                value={formData.tipoAnimal}
+                onValueChange={handleSelectChange}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="bg-background w-full" id="tipoAnimal">
+                  <SelectValue placeholder="Selecione um tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(TiposAnimais).map((key) => (
+                    <SelectItem key={key} value={key}>
+                      {TiposAnimais[key as keyof typeof TiposAnimais]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* ===== SEÇÃO ATUALIZADA ===== */}
             <div className="space-y-2">
-              <Label htmlFor="origin">Origem</Label>
+              <Label htmlFor="alimentacao">Alimentação</Label>
               <Input
-                id="origin"
-                value={formData.origin}
-                onChange={(e) => setFormData((prev) => ({ ...prev, origin: e.target.value }))}
-                placeholder="Ex: América do Sul"
-                className="transition-all duration-300 focus:ring-2 focus:ring-blue-500/20"
+                id="alimentacao"
+                value={formData.alimentacao}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    alimentacao: e.target.value,
+                  }))
+                }
+                placeholder="Ex: Insetívoro, Frugívoro"
               />
             </div>
+            {/* ============================= */}
           </div>
 
-          {/* Alimentação */}
+          {/* Hábitos */}
           <div className="space-y-2">
-            <Label htmlFor="diet">Alimentação</Label>
+            <Label htmlFor="habitos">Hábitos</Label>
             <Input
-              id="diet"
-              value={formData.diet}
-              onChange={(e) => setFormData((prev) => ({ ...prev, diet: e.target.value }))}
-              placeholder="Ex: Insetívoro, frugívoro"
-              className="transition-all duration-300 focus:ring-2 focus:ring-blue-500/20"
-            />
-          </div>
-
-          {/* Descrição */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-              placeholder="Descrição detalhada do animal..."
-              rows={4}
-              className="transition-all duration-300 focus:ring-2 focus:ring-blue-500/20 resize-none"
+              id="habitos"
+              value={formData.habitos}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, habitos: e.target.value }))
+              }
+              placeholder="Ex: Diurno, Noturno, Vive em bandos"
             />
           </div>
 
           {/* Imagem */}
           <div className="space-y-2">
-            <Label>Imagem</Label>
-            <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors bg-transparent"
-              >
-                <Upload className="w-4 h-4" />
-                Escolher Imagem
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {formData.image ? "Imagem selecionada" : "Nenhuma imagem selecionada"}
-              </span>
-            </div>
+            <Label htmlFor="image-upload-animal-modal">Imagem</Label>
+            {imagePreview && (
+              <div className="relative h-32 w-full mb-2 rounded-md overflow-hidden">
+                <Image
+                  src={imagePreview}
+                  alt="Preview"
+                  fill
+                  className="object-contain" // 'object-contain' é melhor para preview
+                />
+              </div>
+            )}
+            <Label
+              htmlFor="image-upload-animal-modal"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              {imageFile ? "Trocar imagem" : "Escolher nova imagem"}
+            </Label>
+            <Input
+              id="image-upload-animal-modal"
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleImageChange}
+            />
           </div>
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isLoading}
-            className="transition-all duration-300 bg-transparent"
-          >
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isLoading || !formData.name || !formData.scientificName}
-            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-all duration-300 transform hover:scale-105"
+            disabled={
+              isLoading || !formData.nomePopular || !formData.nomeCientifico
+            }
+            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
           >
             {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Salvando...
-              </>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
               "Salvar Alterações"
             )}
@@ -214,5 +258,5 @@ export function EditAnimalModal({ isOpen, onClose, species, onSave }: EditAnimal
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

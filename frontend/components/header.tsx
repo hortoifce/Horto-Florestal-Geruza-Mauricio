@@ -51,7 +51,7 @@ export function Header({ title, subtitle, showLogout }: HeaderProps) {
               variant="outline"
               size="sm"
               onClick={handleLogout}
-              className="group flex items-center gap-2 hover:border-red-300 hover:bg-red-50 dark:hover:border-red-600 dark:hover:bg-red-900/10 transition-all duration-300 transform hover:scale-105 bg-transparent"
+              className="group flex items-center gap-2 transition-all duration-300 transform hover:scale-105 bg-transparen"
             >
               <LogOut className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" />
               Sair

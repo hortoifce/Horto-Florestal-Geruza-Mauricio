@@ -16,7 +16,7 @@ import { Trash2, Loader2 } from "lucide-react"
 interface DeleteConfirmationModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: () => Promise<void>
   itemName: string
   itemType: "árvore" | "animal"
 }
@@ -32,13 +32,14 @@ export function DeleteConfirmationModal({
 
   const handleConfirm = async () => {
     setIsDeleting(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    onConfirm()
-    setIsDeleting(false)
-    onClose()
+    try {
+      await onConfirm()
+      onClose()
+    } catch (err) {
+      console.error("Falha ao excluir:", err)
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (

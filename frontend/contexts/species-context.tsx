@@ -1,136 +1,330 @@
-"use client"
+// contexts/species-context.tsx (VERSÃO CORRIGIDA)
+"use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import api from "@/lib/api";
 
-interface Species {
-  id: number
-  name: string
-  scientificName: string
-  type: string
-  image: string
-  description: string
-  qrCode: string
-  family?: string
-  origin?: string
-  characteristics?: string[]
-  utility?: string
-  propagation?: string
-  diet?: string
+// 1. INTERFACE UNIFICADA (com campos opcionais)
+export interface Species {
+  id: string;
+  nomePopular: string;
+  nomeCientifico: string;
+  type: "tree" | "animal";
+  image: string;
+  utilidade?: string;
+  // Campos de Planta
+  familia?: string;
+  origem?: string;
+  formaPropagacao?: string;
+  tiposPlanta?: string[];
+  // Campos de Animal
+  tipoAnimal?: string;
+  habitos?: string;
+  alimentacao?: string; // <-- CORRETO
 }
 
+// 2. NOVOS TIPOS DE FORMULÁRIO (Específicos)
+export type PlantaFormData = {
+  nomePopular: string;
+  nomeCientifico: string;
+  familia: string;
+  origem: string;
+  utilidade: string;
+  formaPropagacao: string;
+  tiposPlanta: string[];
+  imagem?: File | null;
+};
+export type PlantaUpdateData = PlantaFormData;
+
+export type AnimalFormData = {
+  nomePopular: string;
+  nomeCientifico: string;
+  tipoAnimal: string;
+  alimentacao: string; // <-- CORRETO
+  habitos: string;
+  imagem?: File | null;
+};
+export type AnimalUpdateData = AnimalFormData;
+
+// 3. CONTEXT TYPE ATUALIZADO
 interface SpeciesContextType {
-  species: Species[]
-  addSpecies: (species: Species) => void
-  updateSpecies: (id: number, updatedSpecies: Species) => void
-  deleteSpecies: (id: number) => void
-  getSpeciesById: (id: number) => Species | undefined
+  species: Species[];
+  isLoading: boolean;
+  error: string | null;
+  addPlanta: (data: PlantaFormData) => Promise<void>;
+  addAnimal: (data: AnimalFormData) => Promise<void>;
+  updatePlanta: (id: string, data: PlantaUpdateData) => Promise<void>;
+  updateAnimal: (id: string, data: AnimalUpdateData) => Promise<void>;
+  deleteSpecies: (id: string, type: "tree" | "animal") => Promise<void>;
+  getSpeciesById: (id: string) => Species | undefined;
 }
 
-const SpeciesContext = createContext<SpeciesContextType | undefined>(undefined)
+const SpeciesContext = createContext<SpeciesContextType | undefined>(undefined);
 
-const initialSpecies: Species[] = [
-  {
-    id: 1,
-    name: "Ipê Amarelo",
-    scientificName: "Handroanthus albus",
-    type: "tree",
-    image: "/ipe-amarelo-yellow-flowers.png",
-    description:
-      "O Ipê Amarelo é uma das árvores mais emblemáticas do Brasil, conhecida por suas flores amarelas vibrantes que florescem no inverno e primavera. É amplamente utilizada no paisagismo urbano e possui madeira de alta qualidade.",
-    qrCode:
-      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSJ3aGl0ZSIvPgo8cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgZmlsbD0iYmxhY2siLz4KPC9zdmc+",
-    family: "Bignoniaceae",
-    origin: "Brasil - Cerrado",
-    characteristics: ["Ornamental", "Medicinal"],
-    utility: "Paisagismo, madeira, sombra",
-    propagation: "Sementes, mudas",
-  },
-  {
-    id: 2,
-    name: "Pau-Brasil",
-    scientificName: "Paubrasilia echinata",
-    type: "tree",
-    image: "/pau-brasil-forest.png",
-    description:
-      "O Pau-Brasil é a árvore que deu nome ao nosso país. Historicamente explorada pela sua madeira avermelhada usada para tingir tecidos, hoje é uma espécie protegida e símbolo nacional.",
-    qrCode:
-      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSJ3aGl0ZSIvPgo8cmVjdCB4PSIxNSIgeT0iMTUiIHdpZHRoPSI3MCIgaGVpZ2h0PSI3MCIgZmlsbD0iYmxhY2siLz4KPC9zdmc+",
-    family: "Fabaceae",
-    origin: "Brasil - Mata Atlântica",
-    characteristics: ["Ornamental"],
-    utility: "Madeira nobre, corante natural",
-    propagation: "Sementes",
-  },
-  {
-    id: 3,
-    name: "Jacarandá Mimoso",
-    scientificName: "Jacaranda mimosifolia",
-    type: "tree",
-    image: "/placeholder-n2svy.png",
-    description:
-      "O Jacarandá Mimoso é amplamente cultivado no mundo todo por suas espetaculares flores roxas que cobrem completamente a copa da árvore durante a floração, criando um espetáculo visual único.",
-    qrCode:
-      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSJ3aGl0ZSIvPgo8cmVjdCB4PSIyMCIgeT0iMjAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgZmlsbD0iYmxhY2siLz4KPC9zdmc+",
-    family: "Bignoniaceae",
-    origin: "Argentina",
-    characteristics: ["Ornamental"],
-    utility: "Paisagismo urbano, sombra",
-    propagation: "Sementes, mudas",
-  },
-  {
-    id: 4,
-    name: "Pássaro bem-te-vi",
-    scientificName: "passarus benstivis",
-    type: "animal",
-    image: "/bentevi.jpg",
-    description:
-      "Passarin massa",
-    qrCode:
-      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSJ3aGl0ZSIvPgo8cmVjdCB4PSIyMCIgeT0iMjAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgZmlsbD0iYmxhY2siLz4KPC9zdmc+",
-    family: "Passaraiada",
-    origin: "Brasil porra",
-    diet: "Semente",
-  },
-]
+const BACKEND_URL = "https://backhorto.onrender.com";
+
+const getAbsoluteImageUrl = (imagemUrl: string | null | undefined) => {
+  if (!imagemUrl) return "/placeholder.svg";
+  if (imagemUrl.startsWith("http")) return imagemUrl;
+  return `${BACKEND_URL}${imagemUrl}`;
+};
+
+const getOriginalId = (compositeId: string) => {
+  return compositeId.split('_')[1];
+}
 
 export function SpeciesProvider({ children }: { children: ReactNode }) {
-  const [species, setSpecies] = useState<Species[]>(initialSpecies)
+  const [species, setSpecies] = useState<Species[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const addSpecies = (newSpecies: Species) => {
-    setSpecies((prev) => [...prev, { ...newSpecies, id: Date.now() }])
-  }
+  // 4. FETCH UNIFICADO (GET)
+  useEffect(() => {
+    const fetchSpecies = async () => {
+      try {
+        setIsLoading(true);
 
-  const updateSpecies = (id: number, updatedSpecies: Species) => {
-    setSpecies((prev) => prev.map((species) => (species.id === id ? updatedSpecies : species)))
-  }
+        const [plantasResult, animaisResult] = await Promise.allSettled([
+          api.get("/plantas"),
+          api.get("/animais"),
+        ]);
 
-  const deleteSpecies = (id: number) => {
-    setSpecies((prev) => prev.filter((species) => species.id !== id))
-  }
+        let adaptedPlantas: Species[] = [];
+        if (plantasResult.status === "fulfilled") {
+          adaptedPlantas = plantasResult.value.data.map((planta: any) => ({
+            ...planta,
+            id: `tree_${planta.id.toString()}`,
+            type: "tree",
+            image: getAbsoluteImageUrl(planta.imagemUrl),
+          }));
+        } else {
+          console.error("Erro ao buscar plantas:", plantasResult.reason);
+        }
 
-  const getSpeciesById = (id: number) => {
-    return species.find((species) => species.id === id)
-  }
+        let adaptedAnimais: Species[] = [];
+        if (animaisResult.status === "fulfilled") {
+          adaptedAnimais = animaisResult.value.data.map((animal: any) => ({
+            ...animal,
+            id: `animal_${animal.id.toString()}`,
+            type: "animal",
+            image: getAbsoluteImageUrl(animal.imagemUrl),
+          }));
+        } else {
+          console.error("Erro ao buscar animais:", animaisResult.reason);
+        }
+
+        setSpecies([...adaptedPlantas, ...adaptedAnimais]);
+      } catch (err) {
+        console.error("Erro ao buscar espécies:", err);
+        setError("Não foi possível carregar os dados.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSpecies();
+  }, []);
+
+  // 5. FUNÇÕES DE PLANTAS (POST / PUT)
+  const addPlanta = async (data: PlantaFormData) => {
+    try {
+      const formData = new FormData();
+      formData.append("nomePopular", data.nomePopular);
+      formData.append("nomeCientifico", data.nomeCientifico);
+      formData.append("familia", data.familia);
+      formData.append("origem", data.origem);
+      formData.append("utilidade", data.utilidade);
+      formData.append("formaPropagacao", data.formaPropagacao);
+      data.tiposPlanta.forEach((tipo) => formData.append("tiposPlanta", tipo));
+      if (data.imagem) formData.append("imagem", data.imagem);
+
+      // Para POST (criação), é bom manter o header explícito
+      const response = await api.post("/plantas", formData);
+
+      const newPlantFromApi = response.data;
+      const adaptedNewPlant: Species = {
+        ...newPlantFromApi,
+        id: `tree_${newPlantFromApi.id.toString()}`,
+        type: "tree",
+        image: getAbsoluteImageUrl(newPlantFromApi.imagemUrl),
+      };
+      setSpecies((prev) => [...prev, adaptedNewPlant]);
+    } catch (err) {
+      console.error("Erro ao adicionar planta:", err);
+      throw err;
+    }
+  };
+
+  const updatePlanta = async (id: string, data: PlantaUpdateData) => {
+    try {
+      const originalId = getOriginalId(id);
+
+      const formData = new FormData();
+      formData.append("nomePopular", data.nomePopular);
+      formData.append("nomeCientifico", data.nomeCientifico);
+      formData.append("familia", data.familia);
+      formData.append("origem", data.origem);
+      formData.append("utilidade", data.utilidade);
+      formData.append("formaPropagacao", data.formaPropagacao);
+      data.tiposPlanta.forEach((tipo) => formData.append("tiposPlanta", tipo));
+      if (data.imagem) formData.append("imagem", data.imagem);
+
+      formData.append("_method", "PUT");
+
+      const response = await api.post(`/plantas/${originalId}`, formData);
+
+      const updatedPlantFromApi = response.data;
+
+      if (!updatedPlantFromApi.id) {
+        console.error("Erro Crítico: API não retornou um ID na atualização.");
+      }
+
+      const adaptedUpdatedPlant: Species = {
+        ...updatedPlantFromApi,
+        id: `tree_${updatedPlantFromApi.id.toString()}`,
+        type: "tree",
+        image: getAbsoluteImageUrl(updatedPlantFromApi.imagemUrl),
+      };
+
+      setSpecies((prev) =>
+        prev.map((s) => (s.id === id ? adaptedUpdatedPlant : s))
+      );
+    } catch (err) {
+      console.error("Erro ao atualizar planta:", err);
+      throw err;
+    }
+  };
+
+  // 6. NOVAS FUNÇÕES DE ANIMAIS (POST / PUT)
+  const addAnimal = async (data: AnimalFormData) => {
+    try {
+      const formData = new FormData();
+      formData.append("nomePopular", data.nomePopular);
+      formData.append("nomeCientifico", data.nomeCientifico);
+      formData.append("tipoAnimal", data.tipoAnimal);
+      if (data.alimentacao) {
+        formData.append("alimentacao", data.alimentacao);
+      }
+      if (data.habitos) {
+        formData.append("habitos", data.habitos);
+      }
+      if (data.imagem) formData.append("imagem", data.imagem);
+
+      // ===== CORREÇÃO (REMOVER HEADER) =====
+      const response = await api.post("/animais", formData);
+      // ======================================
+
+      const newAnimalFromApi = response.data;
+      const adaptedNewAnimal: Species = {
+        ...newAnimalFromApi,
+        id: `animal_${newAnimalFromApi.id.toString()}`,
+        type: "animal",
+        image: getAbsoluteImageUrl(newAnimalFromApi.imagemUrl),
+      };
+      setSpecies((prev) => [...prev, adaptedNewAnimal]);
+    } catch (err) {
+      console.error("Erro ao adicionar animal:", err);
+      throw err;
+    }
+  };
+
+  const updateAnimal = async (id: string, data: AnimalUpdateData) => {
+    try {
+      const originalId = getOriginalId(id);
+
+      const formData = new FormData();
+      formData.append("nomePopular", data.nomePopular);
+      formData.append("nomeCientifico", data.nomeCientifico);
+      formData.append("tipoAnimal", data.tipoAnimal);
+      formData.append("alimentacao", data.alimentacao);
+      formData.append("habitos", data.habitos);
+      if (data.imagem) formData.append("imagem", data.imagem);
+
+      // ===== CORREÇÃO (USAR POST + _METHOD) =====
+      // Simulamos o PUT para o backend aceitar multipart/form-data
+      formData.append("_method", "PUT");
+
+      // Usamos api.post e SEM header explícito
+      const response = await api.post(`/animais/${originalId}`, formData);
+      // ======================================
+
+      const updatedAnimalFromApi = response.data;
+
+      if (!updatedAnimalFromApi.id) {
+        console.error("Erro Crítico: API não retornou um ID na atualização.");
+      }
+
+      const adaptedUpdatedAnimal: Species = {
+        ...updatedAnimalFromApi,
+        id: `animal_${updatedAnimalFromApi.id.toString()}`,
+        type: "animal",
+        image: getAbsoluteImageUrl(updatedAnimalFromApi.imagemUrl),
+      };
+
+      setSpecies((prev) =>
+        prev.map((s) => (s.id === id ? adaptedUpdatedAnimal : s))
+      );
+    } catch (err) {
+      console.error("Erro ao atualizar animal:", err);
+      throw err;
+    }
+  };
+
+  // 7. FUNÇÃO DELETE GENERALIZADA
+  const deleteSpecies = async (id: string, type: "tree" | "animal") => {
+    try {
+      const endpoint = type === "tree" ? `/plantas/${id}` : `/animais/${id}`;
+      await api.delete(endpoint);
+      setSpecies((prevSpecies) => prevSpecies.filter((s) => s.id !== id));
+    } catch (err) {
+      console.error(`Erro ao excluir ${type}:`, err);
+      throw err;
+    }
+  };
+
+  const getSpeciesById = (id: string) => {
+    return species.find((s) => s.id === id);
+  };
 
   return (
     <SpeciesContext.Provider
       value={{
         species,
-        addSpecies,
-        updateSpecies,
+        isLoading,
+        error,
+        addPlanta,
+        addAnimal,
+        updatePlanta,
+        updateAnimal,
         deleteSpecies,
         getSpeciesById,
       }}
     >
       {children}
     </SpeciesContext.Provider>
-  )
+  );
 }
 
 export function useSpecies() {
-  const context = useContext(SpeciesContext)
+  const context = useContext(SpeciesContext);
   if (!context) {
-    throw new Error("useSpecies must be used within a SpeciesProvider")
+    throw new Error("useSpecies must be used within a SpeciesProvider");
   }
-  return context
+  return context;
+}
+
+// O Enum permanece o mesmo
+export enum TiposAnimais {
+  MAMIFEROS = "Mamífero",
+  ARTROPODES = "Artrópode",
+  REPTEIS = "Réptil",
+  PEIXES = "Peixe",
+  FUNGOS = "Fungo",
+  AVES = "Ave",
 }
