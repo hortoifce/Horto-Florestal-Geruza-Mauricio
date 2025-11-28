@@ -1,4 +1,3 @@
-// components/EditAnimalModal.tsx (VERSÃO ATUALIZADA)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,18 +7,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription, // <--- IMPORTANTE: Adicionado
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Zap, Upload, Loader2 } from "lucide-react";
-import {
-  type Species,
-  type AnimalUpdateData,
-} from "@/contexts/species-context";
+import { type Species, type AnimalUpdateData } from "@/contexts/species-context";
 
-// NOVOS IMPORTS
 import {
   Select,
   SelectContent,
@@ -27,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TiposAnimais } from "@/contexts/enum"; // Assumindo que este enum está em @/contexts/enum
+import { TiposAnimais } from "@/contexts/enum";
 
 interface EditAnimalModalProps {
   isOpen: boolean;
@@ -46,7 +42,7 @@ export function EditAnimalModal({
     nomePopular: "",
     nomeCientifico: "",
     tipoAnimal: "",
-    alimentacao: "", // <-- MUDANÇA AQUI
+    alimentacao: "",
     habitos: "",
   });
 
@@ -60,7 +56,7 @@ export function EditAnimalModal({
         nomePopular: species.nomePopular || "",
         nomeCientifico: species.nomeCientifico || "",
         tipoAnimal: species.tipoAnimal || "",
-        alimentacao: species.alimentacao || "", // <-- MUDANÇA AQUI
+        alimentacao: species.alimentacao || "",
         habitos: species.habitos || "",
       });
       setImagePreview(species.image || null);
@@ -107,7 +103,7 @@ export function EditAnimalModal({
       nomePopular: "",
       nomeCientifico: "",
       tipoAnimal: "",
-      alimentacao: "", // <-- MUDANÇA AQUI
+      alimentacao: "",
       habitos: "",
     });
     setImageFile(null);
@@ -123,6 +119,10 @@ export function EditAnimalModal({
             <Zap className="w-5 h-5" />
             Editar Animal
           </DialogTitle>
+          {/* CORREÇÃO DO ERRO DE ACESSIBILIDADE */}
+          <DialogDescription>
+            Edite os detalhes do animal selecionado abaixo.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
@@ -177,7 +177,6 @@ export function EditAnimalModal({
               </Select>
             </div>
 
-            {/* ===== SEÇÃO ATUALIZADA ===== */}
             <div className="space-y-2">
               <Label htmlFor="alimentacao">Alimentação</Label>
               <Input
@@ -192,7 +191,6 @@ export function EditAnimalModal({
                 placeholder="Ex: Insetívoro, Frugívoro"
               />
             </div>
-            {/* ============================= */}
           </div>
 
           {/* Hábitos */}
@@ -204,7 +202,7 @@ export function EditAnimalModal({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, habitos: e.target.value }))
               }
-              placeholder="Ex: Diurno, Noturno, Vive em bandos"
+              placeholder="Ex: Diurno, Noturno"
             />
           </div>
 
@@ -212,12 +210,12 @@ export function EditAnimalModal({
           <div className="space-y-2">
             <Label htmlFor="image-upload-animal-modal">Imagem</Label>
             {imagePreview && (
-              <div className="relative h-32 w-full mb-2 rounded-md overflow-hidden">
+              <div className="relative h-32 w-full mb-2 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-800">
                 <Image
                   src={imagePreview}
                   alt="Preview"
                   fill
-                  className="object-contain" // 'object-contain' é melhor para preview
+                  className="object-contain"
                 />
               </div>
             )}

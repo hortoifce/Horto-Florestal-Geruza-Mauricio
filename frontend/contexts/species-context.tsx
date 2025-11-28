@@ -1,4 +1,3 @@
-// contexts/species-context.tsx (VERSÃO CORRIGIDA)
 "use client";
 
 import {
@@ -10,7 +9,7 @@ import {
 } from "react";
 import api from "@/lib/api";
 
-// 1. INTERFACE UNIFICADA (com campos opcionais)
+// 1. INTERFACE UNIFICADA
 export interface Species {
   id: string;
   nomePopular: string;
@@ -26,10 +25,10 @@ export interface Species {
   // Campos de Animal
   tipoAnimal?: string;
   habitos?: string;
-  alimentacao?: string; // <-- CORRETO
+  alimentacao?: string;
 }
 
-// 2. NOVOS TIPOS DE FORMULÁRIO (Específicos)
+// 2. TIPOS DE FORMULÁRIO
 export type PlantaFormData = {
   nomePopular: string;
   nomeCientifico: string;
@@ -46,13 +45,13 @@ export type AnimalFormData = {
   nomePopular: string;
   nomeCientifico: string;
   tipoAnimal: string;
-  alimentacao: string; // <-- CORRETO
+  alimentacao: string;
   habitos: string;
   imagem?: File | null;
 };
 export type AnimalUpdateData = AnimalFormData;
 
-// 3. CONTEXT TYPE ATUALIZADO
+// 3. CONTEXT TYPE
 interface SpeciesContextType {
   species: Species[];
   isLoading: boolean;
@@ -67,7 +66,7 @@ interface SpeciesContextType {
 
 const SpeciesContext = createContext<SpeciesContextType | undefined>(undefined);
 
-const BACKEND_URL = "https://backhorto.onrender.com";
+const BACKEND_URL = "https://backend-horto.onrender.com";
 
 const getAbsoluteImageUrl = (imagemUrl: string | null | undefined) => {
   if (!imagemUrl) return "/placeholder.svg";
@@ -84,7 +83,7 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 4. FETCH UNIFICADO (GET)
+  // 4. FETCH (GET)
   useEffect(() => {
     const fetchSpecies = async () => {
       try {
@@ -131,7 +130,7 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
     fetchSpecies();
   }, []);
 
-  // 5. FUNÇÕES DE PLANTAS (POST / PUT)
+  // 5. FUNÇÕES DE PLANTAS
   const addPlanta = async (data: PlantaFormData) => {
     try {
       const formData = new FormData();
@@ -144,7 +143,6 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
       data.tiposPlanta.forEach((tipo) => formData.append("tiposPlanta", tipo));
       if (data.imagem) formData.append("imagem", data.imagem);
 
-      // Para POST (criação), é bom manter o header explícito
       const response = await api.post("/plantas", formData);
 
       const newPlantFromApi = response.data;
@@ -175,21 +173,22 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
       data.tiposPlanta.forEach((tipo) => formData.append("tiposPlanta", tipo));
       if (data.imagem) formData.append("imagem", data.imagem);
 
-      formData.append("_method", "PUT");
+      // TÉCNICA DE SPOOFING: Envia como POST, mas avisa que é PATCH
+      formData.append("_method", "PATCH");
 
+      // Usamos POST porque o CORS do seu servidor aceita POST
       const response = await api.post(`/plantas/${originalId}`, formData);
 
       const updatedPlantFromApi = response.data;
 
-      if (!updatedPlantFromApi.id) {
-        console.error("Erro Crítico: API não retornou um ID na atualização.");
-      }
-
-      const adaptedUpdatedPlant: Species = {
+      const adaptedUpdatedPlant: Species = (updatedPlantFromApi && updatedPlantFromApi.id) ? {
         ...updatedPlantFromApi,
         id: `tree_${updatedPlantFromApi.id.toString()}`,
         type: "tree",
         image: getAbsoluteImageUrl(updatedPlantFromApi.imagemUrl),
+      } : {
+        ...getSpeciesById(id)!,
+        ...data,
       };
 
       setSpecies((prev) =>
@@ -201,24 +200,18 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 6. NOVAS FUNÇÕES DE ANIMAIS (POST / PUT)
+  // 6. FUNÇÕES DE ANIMAIS
   const addAnimal = async (data: AnimalFormData) => {
     try {
       const formData = new FormData();
       formData.append("nomePopular", data.nomePopular);
       formData.append("nomeCientifico", data.nomeCientifico);
       formData.append("tipoAnimal", data.tipoAnimal);
-      if (data.alimentacao) {
-        formData.append("alimentacao", data.alimentacao);
-      }
-      if (data.habitos) {
-        formData.append("habitos", data.habitos);
-      }
+      if (data.alimentacao) formData.append("alimentacao", data.alimentacao);
+      if (data.habitos) formData.append("habitos", data.habitos);
       if (data.imagem) formData.append("imagem", data.imagem);
 
-      // ===== CORREÇÃO (REMOVER HEADER) =====
       const response = await api.post("/animais", formData);
-      // ======================================
 
       const newAnimalFromApi = response.data;
       const adaptedNewAnimal: Species = {
@@ -246,25 +239,22 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
       formData.append("habitos", data.habitos);
       if (data.imagem) formData.append("imagem", data.imagem);
 
-      // ===== CORREÇÃO (USAR POST + _METHOD) =====
-      // Simulamos o PUT para o backend aceitar multipart/form-data
-      formData.append("_method", "PUT");
+      // TÉCNICA DE SPOOFING
+      formData.append("_method", "POST");
 
-      // Usamos api.post e SEM header explícito
+      // Usamos POST para evitar bloqueio de CORS
       const response = await api.post(`/animais/${originalId}`, formData);
-      // ======================================
 
       const updatedAnimalFromApi = response.data;
 
-      if (!updatedAnimalFromApi.id) {
-        console.error("Erro Crítico: API não retornou um ID na atualização.");
-      }
-
-      const adaptedUpdatedAnimal: Species = {
+      const adaptedUpdatedAnimal: Species = (updatedAnimalFromApi && updatedAnimalFromApi.id) ? {
         ...updatedAnimalFromApi,
         id: `animal_${updatedAnimalFromApi.id.toString()}`,
         type: "animal",
         image: getAbsoluteImageUrl(updatedAnimalFromApi.imagemUrl),
+      } : {
+        ...getSpeciesById(id)!,
+        ...data,
       };
 
       setSpecies((prev) =>
@@ -276,11 +266,17 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 7. FUNÇÃO DELETE GENERALIZADA
+  // 7. FUNÇÃO DELETE
   const deleteSpecies = async (id: string, type: "tree" | "animal") => {
     try {
-      const endpoint = type === "tree" ? `/plantas/${id}` : `/animais/${id}`;
+      const originalId = getOriginalId(id);
+
+      const endpoint = type === "tree"
+        ? `/plantas/${originalId}`
+        : `/animais/${originalId}`;
+
       await api.delete(endpoint);
+
       setSpecies((prevSpecies) => prevSpecies.filter((s) => s.id !== id));
     } catch (err) {
       console.error(`Erro ao excluir ${type}:`, err);
@@ -319,7 +315,6 @@ export function useSpecies() {
   return context;
 }
 
-// O Enum permanece o mesmo
 export enum TiposAnimais {
   MAMIFEROS = "Mamífero",
   ARTROPODES = "Artrópode",

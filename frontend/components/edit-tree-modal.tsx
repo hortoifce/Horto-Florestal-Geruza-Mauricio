@@ -1,29 +1,26 @@
-// components/EditTreeModal.tsx (VERSÃO ATUALIZADA)
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image"; // Importar Image para o preview
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription, // <--- IMPORTANTE: Adicionado para corrigir o erro
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// import { Textarea } from "@/components/ui/textarea"; // Removido
 import { Checkbox } from "@/components/ui/checkbox";
 import { TreePine, Upload, Loader2 } from "lucide-react";
-// ALTERADO: Importar os tipos necessários
 import type { Species, PlantaUpdateData } from "@/contexts/species-context";
 
 interface EditTreeModalProps {
   isOpen: boolean;
   onClose: () => void;
   species: Species | null;
-  // ALTERADO: Assinatura da prop onSave
   onSave: (id: string, data: PlantaUpdateData) => Promise<void>;
 }
 
@@ -41,11 +38,8 @@ export function EditTreeModal({
     tiposPlanta: [] as string[],
     utilidade: "",
     formaPropagacao: "",
-    // description: "", // Removido (não está no SpeciesUpdateData)
-    // image: "", // Removido (será tratado por imagePreview)
   });
 
-  // ALTERADO: Estados para o novo arquivo e preview
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,9 +54,7 @@ export function EditTreeModal({
         tiposPlanta: species.tiposPlanta || [],
         utilidade: species.utilidade || "",
         formaPropagacao: species.formaPropagacao || "",
-        // description: species.description || "", // Removido
       });
-      // ALTERADO: Definir preview inicial e limpar arquivo
       setImagePreview(species.image || null);
       setImageFile(null);
     }
@@ -80,7 +72,6 @@ export function EditTreeModal({
     }));
   };
 
-  // ALTERADO: Handler para mudança de imagem
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -88,25 +79,22 @@ export function EditTreeModal({
       setImagePreview(URL.createObjectURL(file));
     } else {
       setImageFile(null);
-      setImagePreview(species?.image || null); // Reverte para a imagem original
+      setImagePreview(species?.image || null);
     }
   };
 
-  // ALTERADO: Lógica de salvar
   const handleSave = async () => {
     if (!species) return;
     setIsLoading(true);
 
     try {
-      // Construir o payload 'SpeciesUpdateData'
       const payload: PlantaUpdateData = {
         ...formData,
-        imagem: imageFile, // Adiciona o novo arquivo (ou null se nenhum foi escolhido)
+        imagem: imageFile,
       };
 
-      // Chamar onSave com o ID e o payload
       await onSave(species.id, payload);
-      onClose(); // Fechar o modal (que chama handleClose)
+      onClose();
     } catch (err) {
       console.error("Falha ao salvar:", err);
     } finally {
@@ -114,7 +102,6 @@ export function EditTreeModal({
     }
   };
 
-  // ALTERADO: Limpar estados de imagem ao fechar
   const handleClose = () => {
     setFormData({
       nomePopular: "",
@@ -138,6 +125,10 @@ export function EditTreeModal({
             <TreePine className="w-5 h-5" />
             Editar Árvore
           </DialogTitle>
+          {/* CORREÇÃO DO ERRO DE ACESSIBILIDADE */}
+          <DialogDescription>
+            Atualize as informações e características da planta abaixo.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
@@ -148,7 +139,9 @@ export function EditTreeModal({
               <Input
                 id="nomePopular"
                 value={formData.nomePopular}
-                onChange={(e) => setFormData((prev) => ({ ...prev, nomePopular: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, nomePopular: e.target.value }))
+                }
                 placeholder="Ex: Ipê Amarelo"
               />
             </div>
@@ -157,7 +150,9 @@ export function EditTreeModal({
               <Input
                 id="nomeCientifico"
                 value={formData.nomeCientifico}
-                onChange={(e) => setFormData((prev) => ({ ...prev, nomeCientifico: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, nomeCientifico: e.target.value }))
+                }
                 placeholder="Ex: Handroanthus albus"
               />
             </div>
@@ -170,9 +165,10 @@ export function EditTreeModal({
               <Input
                 id="familia"
                 value={formData.familia}
-                onChange={(e) => setFormData((prev) => ({ ...prev, familia: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, familia: e.target.value }))
+                }
                 placeholder="Ex: Bignoniaceae"
-                className="transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
             <div className="space-y-2">
@@ -180,9 +176,10 @@ export function EditTreeModal({
               <Input
                 id="origem"
                 value={formData.origem}
-                onChange={(e) => setFormData((prev) => ({ ...prev, origem: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, origem: e.target.value }))
+                }
                 placeholder="Ex: Brasil - Cerrado"
-                className="transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
           </div>
@@ -191,51 +188,50 @@ export function EditTreeModal({
           <div className="space-y-3">
             <Label>Características</Label>
             <div className="flex flex-wrap gap-4">
-              {
-                // Crie um array de objetos para mapear chave e label
-                [
-                  { key: "ORNAMENTAL", label: "Ornamental" },
-                  { key: "FRUTIFERA", label: "Frutífera" },
-                  { key: "MEDICINAL", label: "Medicinal" },
-                ].map((plantType) => (
-                  <div key={plantType.key} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={plantType.key}
-                      // Verifique usando a CHAVE (ex: "ORNAMENTAL")
-                      checked={formData.tiposPlanta.includes(plantType.key)}
-                      onCheckedChange={(checked) =>
-                        handleCharacteristicChange(plantType.key, checked as boolean)
-                      }
-                      className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-                    />
-                    <Label htmlFor={plantType.key} className="text-sm font-normal">
-                      {/* Exiba a LABEL (ex: "Ornamental") */}
-                      {plantType.label}
-                    </Label>
-                  </div>
-                ))
-              }
+              {[
+                { key: "ORNAMENTAL", label: "Ornamental" },
+                { key: "FRUTIFERA", label: "Frutífera" },
+                { key: "MEDICINAL", label: "Medicinal" },
+              ].map((plantType) => (
+                <div key={plantType.key} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={plantType.key}
+                    checked={formData.tiposPlanta.includes(plantType.key)}
+                    onCheckedChange={(checked) =>
+                      handleCharacteristicChange(plantType.key, checked as boolean)
+                    }
+                    className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                  />
+                  <Label htmlFor={plantType.key} className="text-sm font-normal">
+                    {plantType.label}
+                  </Label>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Utilidade e Propagação */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="utilidade">Utilidade</Label> {/* Corrigido htmlFor */}
+              <Label htmlFor="utilidade">Utilidade</Label>
               <Input
                 id="utilidade"
                 value={formData.utilidade}
-                onChange={(e) => setFormData((prev) => ({ ...prev, utilidade: e.target.value }))}
-                placeholder="Ex: Paisagismo, madeira, sombra"
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, utilidade: e.target.value }))
+                }
+                placeholder="Ex: Paisagismo, madeira"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="formaPropagacao">Forma de Propagação</Label> {/* Corrigido htmlFor */}
+              <Label htmlFor="formaPropagacao">Forma de Propagação</Label>
               <Input
                 id="formaPropagacao"
                 value={formData.formaPropagacao}
-                onChange={(e) => setFormData((prev) => ({ ...prev, formaPropagacao: e.target.value }))}
-                placeholder="Ex: Sementes, mudas, estacas"
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, formaPropagacao: e.target.value }))
+                }
+                placeholder="Ex: Sementes, mudas"
               />
             </div>
           </div>
@@ -244,7 +240,7 @@ export function EditTreeModal({
           <div className="space-y-2">
             <Label htmlFor="image-upload-modal">Imagem</Label>
             {imagePreview && (
-              <div className="relative h-32 w-full mb-2 rounded-md overflow-hidden">
+              <div className="relative h-32 w-full mb-2 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-800">
                 <Image
                   src={imagePreview}
                   alt="Preview"
@@ -264,25 +260,20 @@ export function EditTreeModal({
               id="image-upload-modal"
               type="file"
               accept="image/*"
-              className="sr-only" // "sr-only" é melhor que "hidden" para acessibilidade
+              className="sr-only"
               onChange={handleImageChange}
             />
           </div>
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isLoading}
-            className="transition-all duration-300 bg-transparent"
-          >
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={isLoading || !formData.nomePopular || !formData.nomeCientifico}
-            className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800 transition-all duration-300 transform hover:scale-105"
+            className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800"
           >
             {isLoading ? (
               <>
@@ -296,5 +287,5 @@ export function EditTreeModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
