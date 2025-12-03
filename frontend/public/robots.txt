@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://horto-florestal-geruza-mauricio.vercel.app/sitemap.xml
