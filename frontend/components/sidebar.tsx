@@ -64,7 +64,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <TreePine className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-sidebar-foreground">EcoCatalog</h1>
+                <h1 className="text-lg font-semibold text-sidebar-foreground">Catalogo Horto - Femaje</h1>
                 <p className="text-sm text-emerald-600">Flora & Fauna</p>
               </div>
             </div>
