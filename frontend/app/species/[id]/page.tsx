@@ -18,6 +18,13 @@ import {
     Apple, // <-- ÍCONE ANIMAL
 } from "lucide-react";
 
+
+export const metadata = {
+    title: "Espécies de Plantas/Animais – Lista Completa | Horto Florestal Geruza & Maurício",
+    description:
+        "Explore nossa lista de espécies disponíveis no horto. Informações sobre nome científico, uso ornamental, características e muito mais.",
+};
+
 // ATUALIZADO: DetailItem agora aceita 'iconClassName' para cor dinâmica
 const DetailItem = ({
     label,

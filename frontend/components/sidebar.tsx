@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, Shield, TreePine, LogOut } from "lucide-react"
+import { Home, Shield, TreePine, LogOut, Contact, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "./theme-toggle"
 import { Button } from "./ui/button"
@@ -12,6 +12,8 @@ import { Button } from "./ui/button"
 const navigation = [
   { name: "Catálogo", href: "/catalogo-publico", icon: Home },
   { name: "Administração", href: "/admin/dashboard", icon: Shield },
+  { name: "Sobre", href: "/sobre", icon: Info },
+  { name: "Contato", href: "/contato", icon: Contact },
 ]
 
 interface SidebarProps {
