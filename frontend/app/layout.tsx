@@ -29,6 +29,9 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   manifest: "/manifest.json",
+  other: {
+    "google-site-verification": "google226f3b144e77e503.html",
+  },
 };
 
 
