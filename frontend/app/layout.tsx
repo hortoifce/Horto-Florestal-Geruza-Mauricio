@@ -50,6 +50,7 @@ export default function RootLayout({
             --font-mono: ${GeistMono.variable};
           }
         `}</style>
+        <meta name="google-site-verification" content="NmYRtDKuHSOpWG9kdJEO6wbl-nUMXpGmvDDKj7SMric" />
       </head>
       <body className="h-full" suppressHydrationWarning>
         <ThemeProvider
