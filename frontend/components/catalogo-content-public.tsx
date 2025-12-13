@@ -24,10 +24,20 @@ export function CatalogContentPublic() {
         setIsVisible(true);
     }, []);
 
+
     // efeito para escutar a paginação
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, activeTab]);
+
+    useEffect(() => {
+        if (window.innerWidth < 768) {
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+            });
+        }
+    }, [currentPage]);
 
     const filteredSpecies = species.filter(
         (s) =>

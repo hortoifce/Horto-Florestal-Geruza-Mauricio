@@ -58,6 +58,15 @@ export function CatalogContent() {
     setCurrentPage(1);
   }, [searchTerm, activeTab]);
 
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  }, [currentPage]);
+
   const filteredSpecies = species.filter(
     (s) =>
       (activeTab === "trees" ? s.type === "tree" : s.type === "animal") &&
