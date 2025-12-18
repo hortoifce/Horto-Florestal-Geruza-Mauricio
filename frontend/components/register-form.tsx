@@ -4,7 +4,6 @@
 import type React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link"; // Importar Link para navegação
 import { Eye, EyeOff, UserPlus } from "lucide-react"; // Trocar ícone para UserPlus
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,12 +42,6 @@ export function RegisterForm() {
                 email: "",
                 senha: "",
             });
-            // Opcional: redirecionar para o login após um tempo
-            setTimeout(() => {
-                router.push("/admin");
-            }, 3000);
-
-
         } catch (err) {
             console.error("Erro no cadastro:", err);
             // Tratar erro específico (ex: e-mail já existe)
@@ -59,7 +52,7 @@ export function RegisterForm() {
     };
 
     return (
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md justify-center flex min-h-screen m-auto">
             <div className="bg-card text-card-foreground rounded-lg shadow-sm border border-border p-8">
                 {/* Header */}
                 <div className="text-center mb-8">
@@ -175,19 +168,6 @@ export function RegisterForm() {
                         {isLoading ? "Cadastrando..." : "Cadastrar"}
                     </Button>
                 </form>
-
-                {/* Link para Login */}
-                <div className="text-center mt-6">
-                    <p className="text-sm text-muted-foreground">
-                        Já tem uma conta?{" "}
-                        <Link
-                            href="/admin"
-                            className="font-medium text-emerald-600 hover:underline"
-                        >
-                            Fazer login
-                        </Link>
-                    </p>
-                </div>
             </div>
         </div>
     );

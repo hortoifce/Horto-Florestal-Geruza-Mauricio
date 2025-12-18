@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { TreePine, Bird, Bolt } from "lucide-react"
+import { TreePine, Bird, Bolt, CircleFadingPlus } from "lucide-react"
 import { TreeForm } from "@/components/tree-form"
 import { AnimalForm } from "@/components/animal-form"
 import { CatalogContent } from "./catalog-content"
+import { RegisterForm } from "./register-form"
 
 export function AdminTabs() {
-  const [activeTab, setActiveTab] = useState<"trees" | "animals" | "catalogo">("trees")
+  const [activeTab, setActiveTab] = useState<"trees" | "animals" | "catalogo" | "register">("trees")
 
   return (
     <div className="p-8">
@@ -44,6 +45,16 @@ export function AdminTabs() {
             <Bolt className="w-5 h-5" />
             Catalogo
           </button>
+          <button
+            onClick={() => setActiveTab("register")}
+            className={`flex items-center gap-2 pb-4 px-2 border-b-2 transition-all duration-300 transform hover:scale-105 ${activeTab === "register"
+              ? "border-purple-500 text-purple-600 dark:text-purple-400"
+              : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+          >
+            <CircleFadingPlus className="w-5 h-5" />
+            Novo Admin
+          </button>
         </div>
       </div>
 
@@ -52,6 +63,7 @@ export function AdminTabs() {
         {activeTab === "trees" && <TreeForm />}
         {activeTab === "animals" && <AnimalForm />}
         {activeTab === "catalogo" && <CatalogContent />}
+        {activeTab === "register" && <RegisterForm />}
       </div>
     </div>
   )

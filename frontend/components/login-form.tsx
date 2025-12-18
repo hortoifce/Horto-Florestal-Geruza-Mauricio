@@ -9,14 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import api from "@/lib/api";
-import { AdminAuthModal } from "./AdminAuthModal";
 
 export function LoginForm() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -49,15 +47,6 @@ export function LoginForm() {
       setIsLoading(false);
     }
   }
-
-  const handleOpenAuthModal = () => {
-    setIsAuthModalOpen(true);
-  };
-
-  const handleAuthSuccess = () => {
-    setIsAuthModalOpen(false); // Fecha o modal (redundante, mas seguro)
-    router.push("/admin/register"); // Redireciona para o registro
-  };
 
   return (
     <>
@@ -131,22 +120,12 @@ export function LoginForm() {
             <p className="text-sm text-muted-foreground">
               Precisa registrar um novo administrador?
             </p>
-            <Button
-              variant="link"
-              className="font-medium text-emerald-600 hover:underline px-1"
-              onClick={handleOpenAuthModal} // Chama a função para abrir o modal
-              disabled={isLoading} // Desabilita se o login estiver carregando
-            >
-              Clique aqui para validar
-            </Button>
+            <p className="text-sm text-muted-foreground">
+              Entre como um administrador existente e cadastre um novo no painel administrativo.
+            </p>
           </div>
         </div>
       </div>
-      <AdminAuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={handleAuthSuccess}
-      />
     </>
   )
 }
