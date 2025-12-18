@@ -62,7 +62,7 @@ export function EditAnimalModal({
       setImagePreview(species.image || null);
       setImageFile(null);
     }
-  }, [species]);
+  }, [species, isOpen]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

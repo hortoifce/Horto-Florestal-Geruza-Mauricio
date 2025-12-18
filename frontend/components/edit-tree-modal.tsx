@@ -58,7 +58,7 @@ export function EditTreeModal({
       setImagePreview(species.image || null);
       setImageFile(null);
     }
-  }, [species]);
+  }, [species, isOpen]);
 
   const handleCharacteristicChange = (
     characteristic: string,

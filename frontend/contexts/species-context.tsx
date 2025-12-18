@@ -177,7 +177,7 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
       formData.append("_method", "PATCH");
 
       // Usamos POST porque o CORS do seu servidor aceita POST
-      const response = await api.post(`/plantas/${originalId}`, formData);
+      const response = await api.put(`/plantas/${originalId}`, formData);
 
       const updatedPlantFromApi = response.data;
 
@@ -243,7 +243,7 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
       formData.append("_method", "POST");
 
       // Usamos POST para evitar bloqueio de CORS
-      const response = await api.post(`/animais/${originalId}`, formData);
+      const response = await api.put(`/animais/${originalId}`, formData);
 
       const updatedAnimalFromApi = response.data;
 
