@@ -1,9 +1,10 @@
-// components/CatalogContent.tsx (VERSÃO ATUALIZADA)
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bird, Search, TreePine } from "lucide-react";
+// 1. Importar os ícones de ordenação
+import { Bird, Search, TreePine, ArrowDownAZ, ArrowUpZA } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button"; // Importar Button se ainda não tiver
 import { SpeciesCard } from "@/components/species-card";
 import { EditTreeModal } from "@/components/edit-tree-modal";
 import { DeleteConfirmationModal } from "@/components/delete-confirmation-modal";
@@ -28,11 +29,14 @@ export function CatalogContent() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<"trees" | "animals">("trees");
+  // 2. Novo estado para a ordem
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   const [isVisible, setIsVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [editTreeModalOpen, setEditTreeModalOpen] = useState(false);
-  const [editAnimalModalOpen, setEditAnimalModalOpen] = useState(false); // 3. Estado para modal de animal
+  const [editAnimalModalOpen, setEditAnimalModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedSpecies, setSelectedSpecies] = useState<Species | null>(null);
 
@@ -67,6 +71,7 @@ export function CatalogContent() {
     }
   }, [currentPage]);
 
+  // Filtra primeiro
   const filteredSpecies = species.filter(
     (s) =>
       (activeTab === "trees" ? s.type === "tree" : s.type === "animal") &&
@@ -74,11 +79,20 @@ export function CatalogContent() {
         s.nomeCientifico.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // --- LÓGICA DE PAGINAÇÃO ---
-  const totalPages = Math.ceil(filteredSpecies.length / ITEMS_PER_PAGE);
+  // 3. Ordena depois (Frontend Sort)
+  const sortedSpecies = [...filteredSpecies].sort((a, b) => {
+    if (sortOrder === "asc") {
+      return a.nomePopular.localeCompare(b.nomePopular);
+    } else {
+      return b.nomePopular.localeCompare(a.nomePopular);
+    }
+  });
+
+  // --- LÓGICA DE PAGINAÇÃO (Usando sortedSpecies agora) ---
+  const totalPages = Math.ceil(sortedSpecies.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedSpecies = filteredSpecies.slice(startIndex, endIndex);
+  const paginatedSpecies = sortedSpecies.slice(startIndex, endIndex);
 
   const handleDetails = (species: Species) => {
     router.push(`/admin/catalog/${species.id}`);
@@ -113,6 +127,11 @@ export function CatalogContent() {
     }
   };
 
+  // Função para alternar a ordem
+  const toggleSortOrder = () => {
+    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+  };
+
   if (isLoading) return <div className="p-8 text-center">Carregando...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
@@ -124,17 +143,35 @@ export function CatalogContent() {
       <div
         className={`p-8 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
       >
-        {/* Search */}
+        {/* Search and Filter Section */}
         <div className="mb-8 animate-slide-up">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground w-5 h-5 transition-colors" />
-            <Input
-              type="text"
-              placeholder="Buscar espécies..."
-              className="pl-10 border border-input  text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300"
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex flex-col sm:flex-row gap-4 max-w-xl">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground w-5 h-5 transition-colors" />
+              <Input
+                type="text"
+                placeholder="Buscar espécies..."
+                className="pl-10 border border-input text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300"
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
+            {/* 4. Botão de Ordenação */}
+            <Button
+              variant="outline"
+              onClick={toggleSortOrder}
+              className="flex items-center gap-2 min-w-[140px] justify-between hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title={`Ordenar ${sortOrder === "asc" ? "Z-A" : "A-Z"}`}
+            >
+              <span className="text-sm">
+                {sortOrder === "asc" ? "Ordem: A-Z" : "Ordem: Z-A"}
+              </span>
+              {sortOrder === "asc" ? (
+                <ArrowDownAZ className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <ArrowUpZA className="w-4 h-4 text-emerald-600" />
+              )}
+            </Button>
           </div>
         </div>
 
@@ -212,14 +249,20 @@ export function CatalogContent() {
       {/* Modals */}
       <EditTreeModal
         isOpen={editTreeModalOpen}
-        onClose={() => setEditTreeModalOpen(false)}
+        onClose={() => {
+          setEditTreeModalOpen(false);
+          setSelectedSpecies(null);
+        }}
         species={selectedSpecies}
         onSave={handleSaveTreeEdit}
       />
 
       <EditAnimalModal
         isOpen={editAnimalModalOpen}
-        onClose={() => setEditAnimalModalOpen(false)}
+        onClose={() => {
+          setEditAnimalModalOpen(false);
+          setSelectedSpecies(null);
+        }}
         species={selectedSpecies}
         onSave={handleSaveAnimalEdit}
       />
